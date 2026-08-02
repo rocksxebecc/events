@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusEventX | College Event Management &amp; Enrollment Portal</title>
+  <meta name="description"
+    content="Discover, enroll, and manage campus events, tech fests, workshops, and cultural programs." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <!-- Supabase Official JS SDK (Standalone Browser CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="ph-theme">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PAGE LAYOUT — Left sidebar + App Window + Right sidebar
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div class="page-layout">
+
+    <!-- ── Left External Sidebar (Main Navigation) ── -->
+    <aside class="sidebar-ext">
+      <button class="sidebar-ext-item tab-btn active" data-tab="upcoming" id="tab-upcoming" title="Upcoming Events">
+        <div class="sidebar-ext-icon">📅</div>
+        <span>Events</span>
+      </button>
+
+      <button class="sidebar-ext-item tab-btn" data-tab="past" id="tab-past" title="Past Events">
+        <div class="sidebar-ext-icon">📜</div>
+        <span>Past Events</span>
+      </button>
+
+      <button class="sidebar-ext-item tab-btn" data-tab="enrolled" id="myEnrolledTabBtn" title="My Tickets">
+        <div class="sidebar-ext-icon">🎟️</div>
+        <span>My Tickets</span>
+      </button>
+
+      <button class="sidebar-ext-item tab-btn" data-tab="career" id="careerTabBtn" title="Career & Mentors">
+        <div class="sidebar-ext-icon">💼</div>
+        <span>Career</span>
+      </button>
+
+      <button class="sidebar-ext-item tab-btn" data-tab="social" id="socialTabBtn" title="Social Hub">
+        <div class="sidebar-ext-icon">🌐</div>
+        <span>Social</span>
+      </button>
+
+      <button id="adminCreateEventBtn" class="sidebar-ext-item tab-btn admin-only admin-event-only" data-tab="create-event" title="New Event">
+        <div class="sidebar-ext-icon">✨</div>
+        <span>New Event</span>
+      </button>
+
+      <button id="openAdminPanelBtn" class="sidebar-ext-item tab-btn admin-only" data-tab="admin" title="Admin Panel">
+        <div class="sidebar-ext-icon">🛡️</div>
+        <span>Admin Panel</span>
+      </button>
+    </aside>
+
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         APP WINDOW
+    ══════════════════════════════════════════════════════════════════════ -->
+    <div class="app-window">
+
+      <!-- Window Chrome Title Bar -->
+      <div class="window-chrome">
+        <div class="chrome-dots">
+          <span class="chrome-dot dot-close"></span>
+          <span class="chrome-dot dot-min"></span>
+          <span class="chrome-dot dot-max"></span>
+        </div>
+        <div class="chrome-title">CampusEventX — Student &amp; Campus Life Portal</div>
+      </div>
+
+      <!-- Window Inner: main content -->
+      <div class="window-inner">
+
+        <!-- ── Window Main Content ── -->
+        <div class="window-main">
+
+
+          <!-- ══════════════════════════════════════════════════════════════
+               TOP HEADER / NAVBAR (inside window)
+          ═══════════════════════════════════════════════════════════════ -->
+          <header class="app-header">
+            <!-- Brand -->
+            <div class="brand">
+              <div class="logo-icon">⚡</div>
+              <div class="brand-text">
+                <span class="brand-name">Campus<span class="highlight">EventX</span></span>
+                <span class="brand-tagline">Student &amp; Campus Life Portal</span>
+              </div>
+            </div>
+
+            <div class="header-spacer"></div>
+
+            <!-- Right-side user controls -->
+            <div class="user-controls">
+
+              <!-- Shown when NOT logged in -->
+              <div id="guestControls">
+                <button id="openAuthBtn" class="btn btn-primary">
+                  <span>🎓 Login / Register</span>
+                </button>
+              </div>
+
+              <!-- Shown when logged in -->
+              <div id="userControls" class="hidden" style="display:flex;align-items:center;gap:8px;">
+                <!-- Notification Bell Button -->
+                <button id="openNotifBtn" class="btn btn-ghost btn-sm" title="Notification Center" style="position:relative;padding:6px 10px;display:inline-flex;align-items:center;justify-content:center;">
+                  <span style="font-size:1.15rem;">🔔</span>
+                  <span id="notifBadge" class="badge" style="position:absolute;top:-2px;right:-2px;background:#ef4444;color:#ffffff;font-size:0.65rem;padding:2px 5px;border-radius:99px;display:none;font-weight:800;border:1.5px solid #ffffff;box-shadow:0 2px 4px rgba(239,68,68,0.4);">0</span>
+                </button>
+
+                <!-- Profile avatar logo -->
+                <button id="openProfileBtn" class="profile-btn" data-tab="profile" title="View &amp; Edit Profile" style="padding: 2px; border-radius: 50%;">
+                  <div class="avatar" id="userAvatar">S</div>
+                </button>
+
+                <!-- Logout -->
+                <button id="logoutBtn" class="btn btn-ghost btn-sm" title="Logout of account">
+                  <span>🚪 Logout</span>
+                </button>
+              </div>
+
+            </div>
+          </header>
+
+          <main class="main-content">
+            <div class="showcase-frame">
+
+              <!-- Admin Dashboard Banner — only visible to admins in Events tab -->
+              <div id="adminDashboardBanner" class="admin-dashboard-banner admin-only admin-event-only">
+                <div class="admin-banner-header">
+                  <div>
+                    <h2>Event Management</h2>
+                    <p>Create, manage, and track all campus events &amp; enrollments in one place.</p>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <div style="display:flex; gap:8px;">
+                      <div style="background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2); border-radius:12px; padding:9px 16px; text-align:center;">
+                        <div style="font-size:1.4rem; font-weight:900; color:#ffffff; font-family:var(--font-heading); line-height:1;" id="bannerStatEvents">—</div>
+                        <div style="font-size:0.68rem; color:rgba(255,255,255,0.75); font-weight:700; margin-top:3px; letter-spacing:0.08em;">EVENTS</div>
+                      </div>
+                      <div style="background:rgba(130,140,255,0.18); border:1px solid rgba(130,140,255,0.32); border-radius:12px; padding:9px 16px; text-align:center;">
+                        <div style="font-size:1.4rem; font-weight:900; color:#c7d2fe; font-family:var(--font-heading); line-height:1;" id="bannerStatEnrolled">—</div>
+                        <div style="font-size:0.68rem; color:rgba(199,210,254,0.8); font-weight:700; margin-top:3px; letter-spacing:0.08em;">ENROLLED</div>
+                      </div>
+                    </div>
+                    <button id="adminCreateEventBtn2" class="btn" style="background:rgba(255,255,255,0.95); color:#0f172a; font-weight:800; padding:10px 22px; border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.3); border:none; font-size:0.88rem; font-family:var(--font-heading);">
+                      ＋ Add New Event
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Filter Controls -->
+              <section class="controls-section">
+                <div class="filter-controls">
+                  <div class="search-box" style="width: 100%;">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="Search events by title, speaker, or venue..." />
+                    <button id="clearSearchBtn" class="clear-btn hidden">&times;</button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Events Grid Section -->
+              <section id="eventsSection" class="events-grid-section">
+                <!-- Loading Skeleton -->
+                <div id="loadingState" class="skeleton-grid">
+                  <div class="skeleton-card"></div>
+                  <div class="skeleton-card"></div>
+                  <div class="skeleton-card"></div>
+                </div>
+
+                <div id="eventsGrid" class="events-grid hidden"></div>
+
+                <!-- Inline Roster Panel (Admin) -->
+                <div id="inlineRosterPanel" class="hidden" style="margin-top:24px; background:var(--card-bg); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.7); border-radius:16px; overflow:hidden; box-shadow:inset 0 1px 1px rgba(255,255,255,0.8), 0 8px 32px rgba(0,0,0,0.08);">
+                  <!-- Header -->
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.25); flex-wrap:wrap; gap:10px;">
+                    <div>
+                      <h3 id="inlineRosterTitle" style="margin:0;font-size:1.05rem;font-weight:700;color:var(--text-dark);">👥 Enrolled Students</h3>
+                      <p id="inlineRosterSub" style="margin:2px 0 0;font-size:0.8rem;color:var(--text-muted);">Loading...</p>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                      <button id="inlineExportCsvBtn" class="btn btn-accent btn-sm">📥 Export CSV</button>
+                      <button id="inlineRosterClose" class="btn btn-secondary btn-sm">✕ Close</button>
+                    </div>
+                  </div>
+                  <!-- Search bar -->
+                  <div style="padding:12px 20px; border-bottom:1px solid rgba(255,255,255,0.4); background:transparent;">
+                    <div style="position:relative; max-width:420px;">
+                      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.9rem;">🔍</span>
+                      <input id="rosterSearchInput" type="text" placeholder="Search by ticket code (e.g. CX-F9FA7B-0000), name, roll, email..." autocomplete="off"
+                        style="width:100%;padding:8px 12px 8px 32px;border:1px solid var(--border,#e2e8f0);border-radius:8px;font-size:0.85rem;background:var(--input-bg,#f8fafc);color:var(--text-dark);outline:none;box-sizing:border-box;" />
+                    </div>
+                  </div>
+                  <!-- Table -->
+                  <div style="overflow-x:auto;">
+                    <table class="roster-table" style="margin:0;border-radius:0;">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Ticket Code</th>
+                          <th>Roll Number</th>
+                          <th>Student Name</th>
+                          <th>Department</th>
+                          <th>Year</th>
+                          <th>Email</th>
+                          <th>Phone</th>
+                          <th>Enrolled On</th>
+                          <th>Time</th>
+                          <th style="text-align:center;">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="inlineRosterBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div id="emptyState" class="empty-state hidden">
+                  <div class="empty-icon">🎟️</div>
+                  <h3 id="emptyTitle">No Events Found</h3>
+                  <p id="emptyMessage">Try adjusting your search or selecting a different category.</p>
+                  <button id="resetFiltersBtn" class="btn btn-secondary">Reset Filters</button>
+                </div>
+              </section>
+
+              <!-- ── CAREER & MENTORSHIP SECTION ────────────────────────────────── -->
+              <section id="careerSection" class="career-section hidden">
+                <div class="career-hero-banner">
+                  <div class="career-hero-text">
+                    <h2>Career & Mentorship Hub</h2>
+                    <p>Connect 1-on-1 with campus mentors, researchers, and alumni for guidance, resume reviews, and prep.</p>
+                  </div>
+                  <div class="career-hero-actions">
+                    <button id="openApplyMentorBtn" class="btn-career-primary">
+                      Apply as Mentor
+                    </button>
+                    <button id="openAppointMentorBtn" class="btn-career-secondary admin-only">
+                      Appoint New Mentor
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Career Sub-Tab Switcher -->
+                <div class="career-tab-bar">
+                  <button type="button" id="careerSubTabMentors" class="career-sub-btn active" data-career-tab="mentors">
+                    Appointed Mentors
+                  </button>
+                  <button type="button" id="careerSubTabAppointments" class="career-sub-btn" data-career-tab="appointments">
+                    My Sessions
+                  </button>
+                </div>
+
+                <!-- Section 1: Appointed Campus Mentors -->
+                <div id="careerTabMentorsView" class="career-sub-view">
+                  <div class="career-sub-header">
+                    <h3>Appointed Campus Mentors</h3>
+                    <p>Pick a mentor and book an appointment slot for 1-on-1 career guidance.</p>
+                  </div>
+                  <div id="mentorsGrid" class="mentors-grid">
+                    <p style="color: var(--text-muted); padding: 16px;">Loading appointed mentors...</p>
+                  </div>
+                </div>
+
+                <!-- Section 2: My Sessions (Separate View) -->
+                <div id="careerTabAppointmentsView" class="career-sub-view hidden">
+                  <div class="career-sub-header">
+                    <h3>📅 My Sessions</h3>
+                    <p>Your scheduled 1-on-1 mentorship appointments.</p>
+                  </div>
+                  <div id="myAppointmentsFeed" class="my-appointments-feed">
+                    <p style="color: var(--text-muted); padding: 12px;">Sign in to view your booked mentorship sessions.</p>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ── 🌐 SOCIAL SECTION (INLINE TAB) ───────────────────────────────── -->
+              <section id="socialSection" class="social-section hidden" style="padding-top: 8px;">
+                <!-- Social Tab Switcher (Logos Only) -->
+                <div class="admin-tab-nav" style="margin-bottom: 16px; padding: 0; display: flex; gap: 8px;">
+                  <button type="button" class="social-tab-btn active" data-social-tab="feed" title="Campus Feed" style="font-size: 1.25rem; padding: 8px 18px;">🌐</button>
+                  <button type="button" class="social-tab-btn" data-social-tab="search" title="Discover &amp; Find Peers" style="font-size: 1.25rem; padding: 8px 18px;">🔍</button>
+                  <button type="button" class="social-tab-btn" data-social-tab="friends" title="Friends &amp; Requests" style="font-size: 1.25rem; padding: 8px 18px;">👥 <span id="socialBadgePending" class="badge" style="display:none; background: var(--orange); color:#fff; font-size:0.65rem;">0</span></button>
+                </div>
+
+                <!-- TAB 1: Campus Feed -->
+                <div id="socialFeedTab" class="social-tab-content active" style="display: flex; flex-direction: column; gap: 16px;">
+                  <!-- Compact Feed Top Header with Instagram-style simple + icon button -->
+                  <div style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 10px 16px; box-shadow: var(--shadow-sm);">
+                    <span style="font-size: 0.88rem; font-weight: 700; color: var(--text-secondary);">🌐 Campus Community Stream</span>
+                    <button type="button" class="create-post-icon-btn" id="openCreatePostModalBtn" title="Create Post">➕</button>
+                  </div>
+
+                  <!-- Posts Feed Stream -->
+                  <div style="display: flex; flex-direction: column; gap: 12px;" id="socialPostsFeed">
+                    <div style="text-align: center; color: var(--text-muted); padding: 32px;">Loading campus feed...</div>
+                  </div>
+                </div>
+
+                <!-- TAB 2: Search & Peer Suggestions (No Feed Posts) -->
+                <div id="socialSearchTab" class="social-tab-content" style="display: none; flex-direction: column; gap: 18px;">
+                  <!-- Top Search Bar Container -->
+                  <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 14px; padding: 14px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px;">
+                    <div style="font-size: 0.85rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                      <span>🔍 Search Campus Members &amp; Friends</span>
+                    </div>
+                    <div class="search-box" style="width: 100%;">
+                      <span class="search-icon">🔍</span>
+                      <input type="text" id="socialUserSearchInput" placeholder="Type @username, student name, roll number, or department..." />
+                    </div>
+                  </div>
+
+                  <!-- Results & Mutual Connection Suggestions Header -->
+                  <div>
+                    <h4 id="socialSearchHeader" style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                      <span>🤝 Suggested Peers &amp; Mutual Connections</span>
+                      <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Campus Student Roster</span>
+                    </h4>
+                    
+                    <!-- Search Results Stream -->
+                    <div id="socialSearchResults" style="display: flex; flex-direction: column; gap: 10px;">
+                      <p style="text-align: center; color: var(--text-muted); padding: 24px;">Loading peer suggestions...</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- TAB 3: My Friends & Friend Requests -->
+                <div id="socialFriendsTab" class="social-tab-content" style="display: none; flex-direction: column; gap: 20px;">
+                  <div>
+                    <h4 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin-bottom: 10px;">
+                      📩 Pending Friend Requests (<span id="pendingRequestsCount">0</span>)
+                    </h4>
+                    <div id="pendingRequestsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                  </div>
+                  <div>
+                    <h4 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin-bottom: 10px;">
+                      👥 My Campus Friends (<span id="myFriendsCount">0</span>)
+                    </h4>
+                    <div id="myFriendsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px;"></div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ── 🛡️ ADMIN SECTION (INLINE TAB) ───────────────────────────────── -->
+              <section id="adminSection" class="admin-section hidden" style="padding-top: 4px;">
+                
+                <!-- Admin Dashboard Executive Header Banner -->
+                <div class="admin-dashboard-banner" style="margin-bottom: 18px;">
+                  <div class="admin-banner-header">
+                    <div>
+                      <h2>🛡️ Executive Control Center</h2>
+                      <p>User administration, security auditing, mentorship approvals &amp; platform analytics.</p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                      <div style="background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); border-radius:99px; padding:6px 14px; display:flex; align-items:center; gap:6px;">
+                        <span style="width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 8px #22c55e;"></span>
+                        <span style="font-size:0.75rem; font-weight:800; color:#4ade80; letter-spacing:0.04em;">SYSTEM LIVE</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Admin Tab Navigation Segmented Bar -->
+                <div class="admin-tab-nav" style="margin-bottom: 20px;">
+                  <button class="admin-tab-btn active" data-admin-tab="users">👥 Users</button>
+                  <button class="admin-tab-btn" data-admin-tab="activity">⚡ Logs</button>
+                  <button class="admin-tab-btn" data-admin-tab="analytics">📊 Analytics</button>
+                  <button class="admin-tab-btn" data-admin-tab="applications" style="position:relative;">🎓 Mentors<span id="mentorAppsBadge" class="hidden" style="position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:99px;font-size:0.58rem;font-weight:800;padding:1px 5px;min-width:16px;text-align:center;">0</span></button>
+                  <button class="admin-tab-btn" data-admin-tab="tickets">🎟️ Tickets</button>
+                </div>
+
+                <!-- Tab 1: User Management -->
+                <div id="adminUsersTab" class="admin-tab-content active">
+                  <div class="admin-stats-grid">
+                    <div class="admin-stat-card">
+                      <div style="font-size:1.5rem; margin-bottom:4px;">👥</div>
+                      <span class="admin-stat-number" id="statAdminTotalUsers">0</span>
+                      <span class="admin-stat-label">Total Users</span>
+                    </div>
+                    <div class="admin-stat-card green">
+                      <div style="font-size:1.5rem; margin-bottom:4px;">✅</div>
+                      <span class="admin-stat-number" id="statAdminActiveUsers">0</span>
+                      <span class="admin-stat-label">Active</span>
+                    </div>
+                    <div class="admin-stat-card red">
+                      <div style="font-size:1.5rem; margin-bottom:4px;">🚫</div>
+                      <span class="admin-stat-number" id="statAdminBannedUsers">0</span>
+                      <span class="admin-stat-label">Banned / Blocked</span>
+                    </div>
+                    <div class="admin-stat-card gold">
+                      <div style="font-size:1.5rem; margin-bottom:4px;">🎫</div>
+                      <span class="admin-stat-number" id="statAdminTotalRegs">0</span>
+                      <span class="admin-stat-label">Enrollments</span>
+                    </div>
+                  </div>
+
+                  <!-- Filter row: search + select + refresh — all inline-styled for reliability -->
+                  <div style="display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:nowrap;">
+                    <div style="position:relative; flex:1;">
+                      <span style="position:absolute; left:13px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.4); pointer-events:none;">🔍</span>
+                      <input type="text" id="adminUserSearchInput" placeholder="Search by name, email or roll..." style="width:100%; background:rgba(8,10,14,0.8); border:1.5px solid rgba(255,255,255,0.13); color:#fff; padding:11px 14px 11px 38px; border-radius:13px; font-size:0.86rem; font-weight:500; font-family:var(--font-body); outline:none;" />
+                    </div>
+                    <select id="adminUserStatusFilter" style="background:rgba(8,10,14,0.85); border:1.5px solid rgba(255,255,255,0.13); color:#fff; padding:11px 14px; border-radius:13px; font-size:0.86rem; font-weight:600; font-family:var(--font-body); outline:none; cursor:pointer; min-width:148px; flex-shrink:0;">
+                      <option value="ALL" style="background:#1e293b;">All Statuses</option>
+                      <option value="active" style="background:#1e293b;">Active Only</option>
+                      <option value="banned" style="background:#1e293b;">Banned Only</option>
+                      <option value="blocked" style="background:#1e293b;">Blocked Only</option>
+                    </select>
+                    <button id="refreshAdminUsersBtn" style="background:rgba(255,255,255,0.09); border:1.5px solid rgba(255,255,255,0.14); color:#fff; padding:11px 16px; border-radius:13px; font-size:0.85rem; font-weight:700; font-family:var(--font-body); cursor:pointer; white-space:nowrap; flex-shrink:0;">↺ Refresh</button>
+                  </div>
+
+                  <div class="table-container admin-table-container">
+                    <table class="roster-table admin-user-table">
+                      <thead>
+                        <tr>
+                          <th>User Details</th>
+                          <th>Role</th>
+                          <th>Roll / Dept</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="adminUserTableBody">
+                        <tr>
+                          <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">Loading users...</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              <!-- Tab 2: Activity Logs -->
+                <div id="adminActivityTab" class="admin-tab-content">
+                  <div style="display:flex; gap:10px; align-items:center; margin-bottom:16px;">
+                    <select id="adminActivityFilter" style="background:rgba(8,10,14,0.85); border:1.5px solid rgba(255,255,255,0.13); color:#fff; padding:11px 14px; border-radius:13px; font-size:0.86rem; font-weight:600; font-family:var(--font-body); outline:none; cursor:pointer; min-width:180px;">
+                      <option value="ALL" style="background:#1e293b;">All Actions</option>
+                      <option value="USER_SIGNUP" style="background:#1e293b;">Signups</option>
+                      <option value="USER_LOGIN" style="background:#1e293b;">Logins</option>
+                      <option value="EVENT_" style="background:#1e293b;">Event Activity</option>
+                      <option value="USER_BAN" style="background:#1e293b;">Ban &amp; Block Actions</option>
+                    </select>
+                    <button id="refreshAdminLogsBtn" style="background:rgba(255,255,255,0.09); border:1.5px solid rgba(255,255,255,0.14); color:#fff; padding:11px 16px; border-radius:13px; font-size:0.85rem; font-weight:700; font-family:var(--font-body); cursor:pointer;">↺ Refresh</button>
+                  </div>
+                  <div class="activity-log-feed" id="adminActivityLogFeed">
+                    <p style="text-align: center; color: var(--text-muted); padding: 24px;">Loading activity logs...</p>
+                  </div>
+                </div>
+
+                <!-- Tab 3: Analytics -->
+                <div id="adminAnalyticsTab" class="admin-tab-content">
+                  <div class="analytics-kpi-row" id="analyticsKpiRow">
+                    <div class="analytics-kpi-card">
+                      <div class="kpi-icon">👥</div>
+                      <div class="kpi-value" id="kpiTotalUsers">—</div>
+                      <div class="kpi-label">Total Users</div>
+                    </div>
+                    <div class="analytics-kpi-card accent">
+                      <div class="kpi-icon">🗓️</div>
+                      <div class="kpi-value" id="kpiTotalEvents">—</div>
+                      <div class="kpi-label">Total Events</div>
+                    </div>
+                    <div class="analytics-kpi-card green">
+                      <div class="kpi-icon">🎫</div>
+                      <div class="kpi-value" id="kpiTotalEnrollments">—</div>
+                      <div class="kpi-label">Enrollments</div>
+                    </div>
+                    <div class="analytics-kpi-card gold">
+                      <div class="kpi-icon">📈</div>
+                      <div class="kpi-value" id="kpiAvgEnrollments">—</div>
+                      <div class="kpi-label">Avg per Event</div>
+                    </div>
+                    <div class="analytics-kpi-card purple">
+                      <div class="kpi-icon">🔑</div>
+                      <div class="kpi-value" id="kpiTotalLogins">—</div>
+                      <div class="kpi-label">Total Logins</div>
+                    </div>
+                  </div>
+
+                  <div class="analytics-charts-row">
+                    <div class="analytics-chart-card">
+                      <h4 class="chart-title">👨‍🎓 Users by Department</h4>
+                      <div class="bar-chart" id="deptBarChart">Loading...</div>
+                    </div>
+                    <div class="analytics-chart-card">
+                      <h4 class="chart-title">🏆 Top Events by Enrollment</h4>
+                      <div class="bar-chart" id="topEventsChart">Loading...</div>
+                    </div>
+                  </div>
+
+                  <div class="analytics-charts-row">
+                    <div class="analytics-chart-card small donut-chart-card" id="cardRoleChart" style="cursor: pointer;" title="Click to view 3D Interactive Inspector">
+                      <h4 class="chart-title">🎭 User Role Split <span style="font-size:0.75rem; color:var(--orange); font-weight:600; float:right;">🔍 3D View</span></h4>
+                      <div class="donut-chart-wrap" id="roleDonutChart">Loading...</div>
+                    </div>
+                    <div class="analytics-chart-card small donut-chart-card" id="cardStatusChart" style="cursor: pointer;" title="Click to view 3D Interactive Inspector">
+                      <h4 class="chart-title">🔒 Account Status Split <span style="font-size:0.75rem; color:var(--orange); font-weight:600; float:right;">🔍 3D View</span></h4>
+                      <div class="donut-chart-wrap" id="statusDonutChart">Loading...</div>
+                    </div>
+                    <div class="analytics-chart-card">
+                      <h4 class="chart-title">📅 Recent User Signups (last 7 days)</h4>
+                      <div class="sparkline-chart" id="signupSparkline">Loading...</div>
+                    </div>
+                  </div>
+
+                  <div class="analytics-chart-card" style="margin-top: 12px;">
+                    <h4 class="chart-title">🔥 Most Active Users (by Login Count)</h4>
+                    <table class="roster-table" style="margin-top: 10px;">
+                      <thead>
+                        <tr>
+                          <th>#</th><th>Name</th><th>Email</th><th>Dept</th>
+                          <th>Logins</th><th>Last Seen</th><th>Enrollments</th>
+                        </tr>
+                      </thead>
+                      <tbody id="activeUsersTableBody">
+                        <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:16px;">Loading...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Tab 4: Applications -->
+                <div id="adminApplicationsTab" class="admin-tab-content">
+                  <div class="admin-filter-bar" style="flex-wrap:wrap; gap:10px; align-items:center;">
+                    <div>
+                      <p style="font-size: 0.85rem; color: var(--text-muted); margin:0;">Review mentorship applications submitted by students &amp; platform members.</p>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center; margin-left:auto;">
+                      <select id="mentorAppsStatusFilter" class="category-select" style="min-width:130px;">
+                        <option value="ALL">All Applications</option>
+                        <option value="pending">⏳ Pending</option>
+                        <option value="approved">✅ Approved</option>
+                        <option value="rejected">❌ Rejected</option>
+                      </select>
+                      <button id="refreshAdminAppsBtn" class="btn btn-secondary btn-sm">🔄 Refresh</button>
+                    </div>
+                  </div>
+                  <div class="table-container admin-table-container">
+                    <table class="roster-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Applicant Details</th>
+                          <th>Roll / Dept / Year</th>
+                          <th>Phone</th>
+                          <th>Proposed Role</th>
+                          <th>Expertise</th>
+                          <th>Available Slots</th>
+                          <th>Bio</th>
+                          <th>Applied On</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="adminAppsTableBody">
+                        <tr>
+                          <td colspan="11" style="text-align: center; color: var(--text-muted); padding: 24px;">Loading applications...</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                <!-- Tab 5: Ticket Verification & Check-in Scanner -->
+                <div id="adminTicketsTab" class="admin-tab-content" style="display: none;">
+                  <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 14px; padding: 20px; box-shadow: var(--shadow-sm); margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+                      <div>
+                        <h3 style="font-family: var(--font-heading); font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin: 0;">
+                          🎟️ Digital Ticket Verification &amp; Check-in Scanner
+                        </h3>
+                        <p style="margin: 4px 0 0 0; font-size: 0.84rem; color: var(--text-muted);">
+                          Scan a student boarding pass QR code or type ticket code (e.g. <code>CX-F9FA7B-0000</code>) to verify &amp; register student check-in.
+                        </p>
+                      </div>
+                    </div>
+
+                    <form id="adminTicketSearchForm" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                      <div class="search-box" style="flex: 1; min-width: 280px;">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="adminTicketInput" placeholder="Scan QR code or type ticket code (e.g. CX-F9FA7B-0000)..." autocomplete="off" />
+                      </div>
+                      <button type="submit" class="btn btn-primary">⚡ Verify &amp; Check-in Ticket</button>
+                    </form>
+                  </div>
+
+                  <div id="ticketSearchResult" class="hidden"></div>
+                </div>
+              </section>
+
+              <!-- ── ℹ️ ABOUT US SECTION (INLINE TAB) ────────────────────────── -->
+              <section id="aboutSection" class="about-section hidden" style="padding-top: 8px;">
+                <div style="display: flex; flex-direction: column; gap: 16px; font-size: 0.88rem; color: var(--text-secondary);">
+                  <div style="display: flex; align-items: center; gap: 14px; background: #ffffff; border: 1px solid var(--border); border-radius: 14px; padding: 18px;">
+                    <div class="logo-icon" style="width: 46px; height: 46px; font-size: 1.6rem; flex-shrink: 0;">⚡</div>
+                    <div>
+                      <h3 style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 900; color: var(--text-primary); margin: 0;">CampusEventX Platform</h3>
+                      <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 0.84rem;">Comprehensive campus event management, student career guidance &amp; social ecosystem.</p>
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+                    <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-sm);">
+                      <div style="font-size: 1.5rem;">📅</div>
+                      <h4 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin: 0;">Automated Event Lifecycle</h4>
+                      <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+                        Real-time student registration, category filtering, capacity tracking, and automated past event archiving.
+                      </p>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-sm);">
+                      <div style="font-size: 1.5rem;">🎟️</div>
+                      <h4 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin: 0;">Digital Ticket Wallet</h4>
+                      <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+                        Instant generation of boarding-pass style tickets featuring QR code matrix verification for seamless checkpoint check-ins.
+                      </p>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-sm);">
+                      <div style="font-size: 1.5rem;">💼</div>
+                      <h4 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin: 0;">1-on-1 Career Mentorship</h4>
+                      <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+                        Connect directly with appointed industry experts, researchers, and alumni mentors for resume reviews and career prep.
+                      </p>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-sm);">
+                      <div style="font-size: 1.5rem;">🌐</div>
+                      <h4 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin: 0;">Campus Social Community</h4>
+                      <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+                        Share posts, photos, and videos with campus peers, search for students, and send 1-click friend requests.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style="background: #f8faf5; border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                      <span style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-subtle);">PLATFORM VERSION &amp; ARCHITECTURE</span>
+                      <div style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-top: 2px;">CampusEventX v1.2.0 • Supabase Cloud Edition</div>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                      <span style="background: #fff; border: 1px solid var(--border); padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; color: var(--orange);">⚡ Vite</span>
+                      <span style="background: #fff; border: 1px solid var(--border); padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; color: #22c55e;">💚 Supabase DB</span>
+                      <span style="background: #fff; border: 1px solid var(--border); padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; color: #1d4aff;">🎨 Vanilla CSS</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ── 📋 CHANGELOG SECTION (INLINE TAB) ────────────────────────── -->
+              <section id="changelogSection" class="changelog-section hidden" style="padding-top: 8px;">
+                <div style="display: flex; flex-direction: column; gap: 16px; background: #ffffff; border: 1px solid var(--border); border-radius: 14px; padding: 20px;">
+                  <h3 style="font-family: var(--font-heading); font-size: 1.1rem; font-weight: 800; margin: 0;">📋 Platform Release Notes &amp; Updates</h3>
+                  <div style="border-left: 3px solid var(--orange); padding-left: 14px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-weight: 800; font-size: 0.95rem;">v1.2.0</span>
+                      <span style="background: var(--orange-light); color: var(--orange); font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 99px;">CURRENT</span>
+                      <span style="font-size: 0.75rem; color: var(--text-muted);">August 2026</span>
+                    </div>
+                    <ul style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 6px; padding-left: 18px; line-height: 1.5;">
+                      <li>Converted all sections (Social, Admin, About, Changelog, Profile) into seamless inline main window tabs.</li>
+                      <li>Added Campus Social Feed supporting open text, photo uploads, and playable video attachments.</li>
+                      <li>Integrated 1-on-1 Career &amp; Mentorship guidance hub with appointment booking system.</li>
+                    </ul>
+                  </div>
+
+                  <div style="border-left: 3px solid var(--border-mid); padding-left: 14px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-weight: 800; font-size: 0.95rem;">v1.1.0</span>
+                      <span style="font-size: 0.75rem; color: var(--text-muted);">July 2026</span>
+                    </div>
+                    <ul style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 6px; padding-left: 18px; line-height: 1.5;">
+                      <li>Added Admin Control Panel with User Status management (Ban/Block) and CSV roster exports.</li>
+                      <li>Introduced dark theme Past Events timeline archive.</li>
+                    </ul>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ── 👤 PROFILE SECTION (INLINE TAB) ────────────────────────── -->
+              <section id="profileSection" class="profile-section hidden" style="padding-top: 8px;">
+                <div class="career-sub-header" style="margin-bottom: 16px;">
+                  <h3>👤 My Student Profile</h3>
+                  <p>Update your personal information, department, and academic ID.</p>
+                </div>
+
+                <form id="profileForm" style="display: flex; flex-direction: column; gap: 16px; background: #ffffff; border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: var(--shadow-sm);">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="profileName">Full Name *</label>
+                      <input type="text" id="profileName" placeholder="Full name" required />
+                    </div>
+                    <div class="form-group">
+                      <label for="profileUsername">Username (@handle) *</label>
+                      <input type="text" id="profileUsername" placeholder="e.g. alex_cs" required />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="profileRoll">Roll / Student ID *</label>
+                      <input type="text" id="profileRoll" placeholder="Roll / Student ID" required />
+                    </div>
+                    <div class="form-group">
+                      <label for="profilePhone">Phone Number</label>
+                      <input type="tel" id="profilePhone" placeholder="Phone number" />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="profileDept">Department *</label>
+                      <select id="profileDept" required>
+                        <option value="">Select Department</option>
+                        <option value="Computer Science &amp; Eng.">Computer Science &amp; Eng.</option>
+                        <option value="AI &amp; Data Science (AIDS)">AI &amp; Data Science (AIDS)</option>
+                        <option value="Electrical Engineering">Electrical Engineering</option>
+                        <option value="Mechanical Engineering">Mechanical Engineering</option>
+                        <option value="Civil Engineering">Civil Engineering</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label for="profileYear">Academic Year *</label>
+                      <select id="profileYear" required>
+                        <option value="1st Year">1st Year</option>
+                        <option value="2nd Year">2nd Year</option>
+                        <option value="3rd Year">3rd Year</option>
+                        <option value="4th Year">4th Year</option>
+                        <option value="Postgraduate">Postgraduate</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+                    <button type="submit" class="btn btn-primary">Save Profile Details</button>
+                  </div>
+                </form>
+              </section>
+
+              <!-- ── ⚙️ SETTINGS SECTION (PROFESSIONAL MASTER-DETAIL) ────────────────────────── -->
+              <section id="settingsSection" class="settings-section hidden" style="padding-top: 8px;">
+                <div class="career-sub-header" style="margin-bottom: 16px;">
+                  <h3>⚙️ System Settings &amp; Preferences</h3>
+                  <p>Enterprise control center for notifications, theme appearance, pass security, and account privacy.</p>
+                </div>
+
+                <div class="settings-pro-container">
+                  <!-- Left Category Navigation Sidebar -->
+                  <div class="settings-nav-sidebar" style="display: flex; flex-direction: column; gap: 4px; border-right: 1px solid var(--border-light); padding-right: 14px;">
+                    <button type="button" class="settings-nav-btn active" data-settings-pane="notifications">
+                      <span>🔔</span> Notifications
+                    </button>
+                    <button type="button" class="settings-nav-btn" data-settings-pane="appearance">
+                      <span>🎨</span> Appearance
+                    </button>
+                    <button type="button" class="settings-nav-btn" data-settings-pane="privacy">
+                      <span>🔒</span> Account Privacy
+                    </button>
+                    <button type="button" class="settings-nav-btn" data-settings-pane="passes">
+                      <span>🎟️</span> Passes &amp; Tickets
+                    </button>
+                    <button type="button" class="settings-nav-btn" data-settings-pane="career">
+                      <span>💼</span> Mentorship
+                    </button>
+                    <button type="button" class="settings-nav-btn" data-settings-pane="quiet">
+                      <span>🌙</span> Quiet Mode &amp; Focus
+                    </button>
+                    <button type="button" class="settings-nav-btn" data-settings-pane="data">
+                      <span>⚡</span> Storage &amp; Security
+                    </button>
+
+                    <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border-light);">
+                      <button type="button" id="logoutBtn" class="btn btn-ghost btn-sm" style="width: 100%; justify-content: flex-start; color: #b91c1c; font-weight: 700;">
+                        🚪 Logout Account
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Right Active Pane Content -->
+                  <div class="settings-pane-wrapper" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    
+                    <!-- PANE 1: Notifications -->
+                    <div id="settingsPaneNotifications" class="settings-pane active">
+                      <div>
+                        <h4 style="font-family: var(--font-heading); font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">🔔 Notification &amp; Broadcast Preferences</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">Choose how and when CampusEventX notifies you.</p>
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Event Enrollment Reminders</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Receive email alerts 24 hours &amp; 1 hour before enrolled events start.</p>
+                        </div>
+                        <input type="checkbox" id="settingNotifyEvent" checked style="width: 20px; height: 20px; accent-color: var(--orange);" />
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Mentorship Session Updates</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Instant notifications when a mentor confirms or reschedules a 1-on-1 slot.</p>
+                        </div>
+                        <input type="checkbox" id="settingNotifyMentor" checked style="width: 20px; height: 20px; accent-color: var(--orange);" />
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Campus Broadcast Alerts</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Important announcements from campus admin &amp; event organizers.</p>
+                        </div>
+                        <input type="checkbox" id="settingNotifyAnnounce" checked style="width: 20px; height: 20px; accent-color: var(--orange);" />
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Social Feed Activity Alerts</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Alerts for new friend requests, comments, and post likes.</p>
+                        </div>
+                        <input type="checkbox" id="settingNotifySocial" checked style="width: 20px; height: 20px; accent-color: var(--orange);" />
+                      </div>
+                    </div>
+
+                    <!-- PANE 2: Appearance -->
+                    <div id="settingsPaneAppearance" class="settings-pane">
+                      <div>
+                        <h4 style="font-family: var(--font-heading); font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">🎨 Appearance &amp; Display Settings</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">Customize the visual theme, glass physics, and grid density.</p>
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Portal Theme Style</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Choose between Sage Glass, Dark Obsidian, or Clean Light.</p>
+                        </div>
+                        <select id="settingThemeSelect" style="border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 0.85rem; min-width: 180px;">
+                          <option value="glass">🍃 Sage Glassmorphism (Default)</option>
+                          <option value="dark">🌙 Dark Obsidian Glass</option>
+                          <option value="light">☀️ Clean Minimal Light</option>
+                        </select>
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Glass Motion &amp; Blur Physics</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Apple spring blur motion vs standard or reduced motion.</p>
+                        </div>
+                        <select id="settingGlassMotion" style="border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 0.85rem; min-width: 180px;">
+                          <option value="apple">🍏 Apple Spring Blur (25px)</option>
+                          <option value="standard">⚡ Standard Blur (12px)</option>
+                          <option value="none">🛑 Reduced Motion (No Blur)</option>
+                        </select>
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Event Showcase Layout Density</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Adjust card spacing density across showcase grids.</p>
+                        </div>
+                        <select id="settingGridDensity" style="border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 0.85rem; min-width: 180px;">
+                          <option value="comfortable">📖 Comfortable Spacing</option>
+                          <option value="compact">⚡ Compact Grid</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- PANE 3: Privacy & Interactions -->
+                    <div id="settingsPanePrivacy" class="settings-pane">
+                      <div>
+                        <h4 style="font-family: var(--font-heading); font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">🔒 Privacy &amp; Social Interactions</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">Control your profile visibility and who can message or connect with you.</p>
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Private Student Profile</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Only confirmed peer friends can view your social posts &amp; event attendance.</p>
+                        </div>
+                        <input type="checkbox" id="settingPrivateAccount" style="width: 20px; height: 20px; accent-color: var(--orange);" />
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Show Activity Status ("Active Now")</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Allows connected peers to see when you are online in CampusEventX.</p>
+                        </div>
+                        <input type="checkbox" id="settingActivityStatus" checked style="width: 20px; height: 20px; accent-color: var(--orange);" />
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Direct Message Requests</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Control who can send you direct messages on the portal.</p>
+                        </div>
+                        <select id="settingMsgPerm" style="border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 0.85rem; min-width: 180px;">
+                          <option value="everyone">🌐 Everyone on Campus</option>
+                          <option value="friends">👥 Connected Peers Only</option>
+                          <option value="nobody">🚫 Nobody (Disabled)</option>
+                        </select>
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Peer Directory Discovery</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Allow other students to find your profile by name or roll number.</p>
+                        </div>
+                        <input type="checkbox" id="settingAllowPeerSearch" checked style="width: 20px; height: 20px; accent-color: var(--orange);" />
+                      </div>
+                    </div>
+
+                    <!-- PANE 4: Digital Passes & Tickets -->
+                    <div id="settingsPanePasses" class="settings-pane">
+                      <div>
+                        <h4 style="font-family: var(--font-heading); font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">🎟️ Digital Ticket &amp; Entry Preferences</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">Customize ticket details, high-contrast scanner modes, and calendar sync.</p>
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Show Full Student Roll Number on Boarding Pass</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Displays official student ID number directly on ticket stub.</p>
+                        </div>
+                        <input type="checkbox" id="settingShowRollOnPass" checked style="width: 20px; height: 20px; accent-color: var(--orange);" />
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">High-Contrast Mode for Entry Checkpoints</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Max brightness background on QR pass modals for rapid laser scanning.</p>
+                        </div>
+                        <input type="checkbox" id="settingHighContrastPass" style="width: 20px; height: 20px; accent-color: var(--orange);" />
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Auto-Sync Events with Google / Apple Calendar</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Creates .ics calendar events upon successful enrollment.</p>
+                        </div>
+                        <input type="checkbox" id="settingAutoCalendar" checked style="width: 20px; height: 20px; accent-color: var(--orange);" />
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Show Seat &amp; Venue Zone Details</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Displays assigned auditorium row and hall zone on ticket pass.</p>
+                        </div>
+                        <input type="checkbox" id="settingShowSeatZone" checked style="width: 20px; height: 20px; accent-color: var(--orange);" />
+                      </div>
+                    </div>
+
+                    <!-- PANE 5: Mentorship -->
+                    <div id="settingsPaneCareer" class="settings-pane">
+                      <div>
+                        <h4 style="font-family: var(--font-heading); font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">💼 Mentorship &amp; Guidance Options</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">Configure your 1-on-1 guidance booking preferences.</p>
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Share Student Profile &amp; Resume with Booked Mentors</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Grants 1-on-1 mentors advance access to your department &amp; background.</p>
+                        </div>
+                        <input type="checkbox" id="settingShareResume" checked style="width: 20px; height: 20px; accent-color: var(--orange);" />
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Preferred Guidance Session Format</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Choose default format for 1-on-1 career guidance sessions.</p>
+                        </div>
+                        <select id="settingMentorshipMode" style="border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 0.85rem; min-width: 180px;">
+                          <option value="virtual">💻 Virtual Google Meet Video Call</option>
+                          <option value="inperson">🏛️ In-Person Campus Career Desk</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- PANE 6: Quiet Mode -->
+                    <div id="settingsPaneQuiet" class="settings-pane">
+                      <div>
+                        <h4 style="font-family: var(--font-heading); font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">🌙 Quiet Mode &amp; Exam Study Focus</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">Set quiet hours during study times and manage daily screen limits.</p>
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Enable Quiet Mode (Night Study / Exams)</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Mutes non-urgent notifications &amp; updates status to "In Quiet Mode" (10 PM - 7 AM).</p>
+                        </div>
+                        <input type="checkbox" id="settingQuietMode" checked style="width: 20px; height: 20px; accent-color: var(--orange);" />
+                      </div>
+
+                      <div class="settings-item-row">
+                        <div>
+                          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.88rem;">Daily Portal Screen Time Limit Alert</span>
+                          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Alerts when you reach your chosen daily browsing limit.</p>
+                        </div>
+                        <select id="settingDailyLimit" style="border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 0.85rem; min-width: 180px;">
+                          <option value="30">⏱️ 30 Minutes / Day</option>
+                          <option value="45" selected>⏱️ 45 Minutes / Day</option>
+                          <option value="60">⏱️ 1 Hour / Day</option>
+                          <option value="off">🚫 Off (No Reminder)</option>
+                        </select>
+                      </div>
+                    </div><!-- /settingsPaneQuiet -->
+
+                    <!-- Bottom Action Controls Footer -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid var(--border-light); margin-top: 16px;">
+                      <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">⚡ All preferences auto-save locally</span>
+                      <button type="button" id="saveSettingsBtn" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">
+                        ⚙️ Save Changes
+                      </button>
+                    </div>
+
+                  </div><!-- /settings-pane-wrapper -->
+                </div><!-- /settings-pro-container -->
+              </section><!-- /settingsSection -->
+
+              <!-- ── ✨ NEW EVENT SECTION (INLINE TAB) ────────────────────────── -->
+              <section id="newEventSection" class="new-event-section hidden" style="padding-top: 8px;">
+                <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 14px; padding: 20px; box-shadow: var(--shadow-sm);">
+                  <div style="margin-bottom: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 12px;">
+                    <h3 id="adminEventModalTitle" style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 900; margin: 0; color: var(--text-primary);">✨ Create Campus Event</h3>
+                    <p style="margin: 4px 0 0 0; font-size: 0.84rem; color: var(--text-muted);">Fill details below. This event will be published for all students to view &amp; enroll.</p>
+                  </div>
+
+                  <form id="adminEventForm" class="modal-form">
+                    <input type="hidden" id="adminEventId" />
+
+                    <!-- Title -->
+                    <div class="form-row">
+                      <div class="form-group flex-1">
+                        <label for="eventTitle">Event Title *</label>
+                        <input type="text" id="eventTitle" placeholder="Event title" required />
+                      </div>
+                    </div>
+
+                    <!-- Date & Time (separate pickers) -->
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="eventDatePart">Date *</label>
+                        <input type="date" id="eventDatePart" required />
+                      </div>
+                      <div class="form-group">
+                        <label for="eventTimePart">Time *</label>
+                        <input type="time" id="eventTimePart" required />
+                      </div>
+                      <div class="form-group">
+                        <label for="eventVenue">Venue *</label>
+                        <input type="text" id="eventVenue" placeholder="Venue" required />
+                      </div>
+                    </div>
+
+                    <!-- Speaker & Capacity -->
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="eventSpeaker">Host / Speaker</label>
+                        <input type="text" id="eventSpeaker" placeholder="Host or speaker name" />
+                      </div>
+                      <div class="form-group">
+                        <label for="eventCapacity">Max Capacity</label>
+                        <input type="number" id="eventCapacity" min="1" max="5000" placeholder="Unlimited if blank" />
+                      </div>
+                    </div>
+
+                    <!-- Banner Image -->
+                    <div class="form-group">
+                      <label>Event Banner Image</label>
+                      <div class="banner-picker">
+                        <div class="banner-picker-preview" id="bannerPickerPreview">
+                          <div class="banner-picker-placeholder" id="bannerPickerPlaceholder">
+                            <span class="banner-picker-icon">🖼️</span>
+                            <span>No image set</span>
+                            <span class="banner-picker-hint">Upload a file or paste a URL below</span>
+                          </div>
+                          <img id="eventBannerImg" src="" alt="Banner preview" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:10px;" />
+                          <button type="button" id="clearBannerBtn" class="banner-clear-btn" style="display:none;" title="Remove image">✕</button>
+                        </div>
+
+                        <!-- Upload row -->
+                        <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+                          <label for="eventBannerFile" id="bannerUploadLabel" class="btn btn-secondary btn-sm" style="cursor:pointer; margin:0; display:inline-flex; align-items:center; gap:6px;">
+                            📁 Upload Image
+                          </label>
+                          <input type="file" id="eventBannerFile" accept="image/*" style="display:none;" />
+                          <span id="bannerUploadStatus" style="font-size:0.8rem; color:var(--text-muted);">or paste URL below</span>
+                        </div>
+
+                        <input type="url" id="eventBanner" placeholder="Paste image URL here (e.g. https://...jpg)" autocomplete="off" style="margin-top:8px;" />
+                        <p class="form-hint">Upload a JPG/PNG/WebP file or paste a direct image URL. Leave blank for a category-themed gradient.</p>
+                      </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-group">
+                      <label for="eventDescription">Overview &amp; Description *</label>
+                      <textarea id="eventDescription" rows="4" placeholder="Event description" required></textarea>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+                      <button type="button" class="btn btn-secondary" id="cancelNewEventBtn">Cancel</button>
+                      <button type="submit" class="btn btn-primary" id="saveEventBtn">Publish Event</button>
+                    </div>
+                  </form>
+                </div>
+              </section>
+
+            </div><!-- /showcase-frame -->
+
+
+          </main>
+
+          <!-- Footer -->
+          <footer class="app-footer">
+            <div class="footer-container">
+              <div class="footer-brand">
+                <span class="logo-icon">⚡</span>
+                <span class="footer-title">CampusEventX</span>
+                <p>Official Event Management &amp; Student Engagement Platform</p>
+              </div>
+              <div class="footer-links">
+                <button id="footerAboutBtn" class="link-btn" style="font-size: 0.8rem; color: var(--text-muted); cursor: pointer; text-decoration: underline; margin-right: 12px;">About Us</button>
+                <span class="footer-text">Powered by Supabase &amp; Vite</span>
+              </div>
+            </div>
+          </footer>
+
+        </div><!-- /window-main -->
+      </div><!-- /window-inner -->
+    </div><!-- /app-window -->
+
+    <!-- ── Right External Sidebar ── -->
+    <aside class="sidebar-ext sidebar-ext-right">
+      <div class="sidebar-ext-item tab-btn" data-tab="settings" title="Account Settings &amp; Preferences" id="openSettingsRightWidgetBtn">
+        <div class="sidebar-ext-icon">⚙️</div>
+        <span>Settings</span>
+      </div>
+      <div class="sidebar-ext-item tab-btn" data-tab="about" title="About Us" id="openAboutUsBtn">
+        <div class="sidebar-ext-icon">ℹ️</div>
+        <span>About us</span>
+      </div>
+      <div class="sidebar-ext-item tab-btn" data-tab="changelog" title="Changelog" id="openChangelogBtn">
+        <div class="sidebar-ext-icon">📋</div>
+        <span>Changelog</span>
+      </div>
+    </aside>
+
+
+  </div><!-- /page-layout -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       MODALS (unchanged — all outside page-layout flow)
+  ════════════════════════════════════════════════════════════════════════ -->
+
+  <!-- 1. AUTH MODAL (Login / Register) -->
+  <div id="authModal" class="modal-overlay hidden">
+    <div class="modal-card modal-auth">
+      <button class="modal-close" data-close="authModal">&times;</button>
+
+      <!-- Tab Switcher -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-auth="login">Login</button>
+        <button class="auth-tab" data-auth="register">Register</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" class="auth-form">
+        <div class="auth-header">
+          <div class="auth-icon">🔐</div>
+          <h2>Welcome Back</h2>
+          <p>Sign in to your campus account</p>
+        </div>
+
+        <div class="form-group">
+          <label for="loginEmail">Email Address</label>
+          <input type="email" id="loginEmail" placeholder="Email address" required autocomplete="email" />
+        </div>
+
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <div class="password-field">
+            <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password" />
+            <button type="button" class="eye-toggle" data-target="loginPassword">👁</button>
+          </div>
+        </div>
+
+        <div id="loginError" class="auth-error hidden"></div>
+
+        <button type="submit" class="btn btn-primary btn-full" id="loginSubmitBtn">
+          <span class="btn-text">Sign In</span>
+          <span class="btn-spinner hidden">⏳</span>
+        </button>
+
+        <p class="auth-switch">Don't have an account? <button type="button" class="link-btn"
+            data-auth="register">Register here</button></p>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form id="registerForm" class="auth-form hidden">
+        <div class="auth-header">
+          <div class="auth-icon">🎓</div>
+          <h2>Create Student Account</h2>
+          <p>Join CampusEventX and start enrolling in events</p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="regName">Full Name *</label>
+            <input type="text" id="regName" placeholder="Your full name" required />
+          </div>
+          <div class="form-group">
+            <label for="regRoll">Roll / Student ID *</label>
+            <input type="text" id="regRoll" placeholder="Roll / Student ID" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="regEmail">Email Address *</label>
+            <input type="email" id="regEmail" placeholder="Email address" required autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label for="regPhone">Phone Number</label>
+            <input type="tel" id="regPhone" placeholder="Phone number" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="regDept">Department *</label>
+            <select id="regDept" required>
+              <option value="">Select Department</option>
+              <option value="Computer Science &amp; Eng.">Computer Science &amp; Eng.</option>
+              <option value="AI &amp; Data Science (AIDS)">AI &amp; Data Science (AIDS)</option>
+              <option value="Electrical Engineering">Electrical Engineering</option>
+              <option value="Mechanical Engineering">Mechanical Engineering</option>
+              <option value="Civil Engineering">Civil Engineering</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="regYear">Academic Year *</label>
+            <select id="regYear" required>
+              <option value="1st Year">1st Year</option>
+              <option value="2nd Year">2nd Year</option>
+              <option value="3rd Year">3rd Year</option>
+              <option value="4th Year">4th Year</option>
+              <option value="Postgraduate">Postgraduate</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="regPassword">Password *</label>
+          <div class="password-field">
+            <input type="password" id="regPassword" placeholder="Min. 8 characters" required minlength="8"
+              autocomplete="new-password" />
+            <button type="button" class="eye-toggle" data-target="regPassword">👁</button>
+          </div>
+        </div>
+
+        <div id="registerError" class="auth-error hidden"></div>
+
+        <button type="submit" class="btn btn-primary btn-full" id="registerSubmitBtn">
+          <span class="btn-text">Create Account</span>
+          <span class="btn-spinner hidden">⏳</span>
+        </button>
+
+        <p class="auth-switch">Already have an account? <button type="button" class="link-btn" data-auth="login">Sign
+            in</button></p>
+      </form>
+    </div>
+  </div>
+
+
+
+      <!-- TAB 3: Help Centre & FAQs -->
+      <div id="profileHelpTab" class="profile-tab-content" style="display: none; flex-direction: column; gap: 16px;">
+        
+        <!-- Quick FAQs -->
+        <div style="background: #f8faf5; border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+          <h4 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin-bottom: 10px;">💡 Frequently Asked Questions</h4>
+          
+          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.84rem;">
+            <div style="background: #fff; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px 12px;">
+              <strong style="color: var(--text-primary); display: block; margin-bottom: 2px;">🎟️ How do I check in at an event?</strong>
+              <span style="color: var(--text-muted);">Go to the <strong>My Tickets</strong> section (or click "My Ticket" on any enrolled event card) to open your digital pass. Show the QR code to event checkpoint coordinators.</span>
+            </div>
+            
+            <div style="background: #fff; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px 12px;">
+              <strong style="color: var(--text-primary); display: block; margin-bottom: 2px;">💼 How do 1-on-1 mentorship bookings work?</strong>
+              <span style="color: var(--text-muted);">Navigate to the <strong>Career</strong> section, browse appointed campus mentors, pick an available slot, and submit your topic. Your appointment will be confirmed immediately.</span>
+            </div>
+
+            <div style="background: #fff; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px 12px;">
+              <strong style="color: var(--text-primary); display: block; margin-bottom: 2px;">✏️ What if my Roll Number or Department is incorrect?</strong>
+              <span style="color: var(--text-muted);">Update your details under the <strong>Personal Details</strong> tab above and click "Save Details". All new passes and rosters will automatically reflect your updated details.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Support Desk Form -->
+        <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+          <h4 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">📩 Contact Campus Support Desk</h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">Need help with ticket passes, event access, or technical issues? Send a direct message to the campus IT support team.</p>
+
+          <form id="helpSupportForm" class="modal-form" style="gap: 10px;">
+            <div class="form-group">
+              <label for="helpCategory">Issue Category</label>
+              <select id="helpCategory" required style="width:100%;">
+                <option value="Event Enrollment / Pass Issue">🎟️ Event Enrollment / Pass Issue</option>
+                <option value="Mentorship Session Assistance">💼 Mentorship Session Assistance</option>
+                <option value="Profile / ID Information Update">👤 Profile / ID Information Update</option>
+                <option value="Technical Bug or Feedback">⚡ Technical Bug or Feedback</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="helpMessage">Message / Details</label>
+              <textarea id="helpMessage" rows="3" placeholder="Describe your issue or query..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-accent btn-sm" style="align-self: flex-end;">
+              <span>📨 Send Support Ticket</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" data-close="profileModal">Close</button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+
+
+
+  <!-- 4. EVENT DETAIL MODAL -->
+  <div id="eventDetailModal" class="modal-overlay hidden">
+    <div class="modal-card modal-large modal-detail">
+      <button class="modal-close" data-close="eventDetailModal">&times;</button>
+      <div id="eventDetailContent"></div>
+    </div>
+  </div>
+
+  <!-- 5. DIGITAL TICKET / PASS MODAL -->
+  <div id="ticketModal" class="modal-overlay hidden">
+    <div class="modal-card modal-ticket">
+      <button class="modal-close" data-close="ticketModal">&times;</button>
+      <div class="ticket-wrapper">
+        <div class="ticket-header">
+          <span class="ticket-badge">🎟️ Digital Event Pass</span>
+          <h3 id="ticketEventTitle">Event Title</h3>
+        </div>
+        <div class="ticket-body">
+          <div class="ticket-info-grid">
+            <div class="info-item">
+              <span class="info-label">STUDENT NAME</span>
+              <span class="info-value" id="ticketStudentName">—</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">ROLL NO</span>
+              <span class="info-value" id="ticketStudentRoll">—</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">DATE &amp; TIME</span>
+              <span class="info-value" id="ticketEventDate">—</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">VENUE</span>
+              <span class="info-value" id="ticketEventVenue">—</span>
+            </div>
+          </div>
+          <div class="ticket-qr-container">
+            <div class="qr-box">
+              <div class="qr-matrix" id="qrMatrix"></div>
+            </div>
+            <span class="ticket-code" id="ticketCode">PASS-XXXXXX</span>
+            <span class="qr-sub">Scan at Event Entry Checkpoint</span>
+          </div>
+        </div>
+        <div class="ticket-footer">
+          <button class="btn btn-secondary" onclick="window.print()">🖨️ Print Pass</button>
+          <button class="btn btn-primary" data-close="ticketModal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. ADMIN ROSTER MODAL -->
+  <div id="rosterModal" class="modal-overlay hidden">
+    <div class="modal-card modal-large">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2 id="rosterEventTitle">Enrolled Students Roster</h2>
+          <p id="rosterCountSub">Total: 0 students</p>
+        </div>
+        <button class="modal-close" data-close="rosterModal">&times;</button>
+      </div>
+      <div class="roster-actions">
+        <button id="exportCsvBtn" class="btn btn-accent">📥 Export Roster CSV</button>
+      </div>
+      <div class="table-container">
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Roll Number</th>
+              <th>Student Name</th>
+              <th>Department</th>
+              <th>Year</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Enrolled On</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="rosterTableBody"></tbody>
+        </table>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" data-close="rosterModal">Close</button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- ── 7. APPOINT MENTOR MODAL (ADMIN ONLY) ────────────────────────────── -->
+  <div id="appointMentorModal" class="modal-overlay hidden">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div>
+          <h2>🎓 Appoint Career Mentor</h2>
+          <p class="modal-subtitle">Appoint an industry expert or researcher as an official campus mentor.</p>
+        </div>
+        <button class="modal-close" data-close="appointMentorModal">&times;</button>
+      </div>
+
+      <form id="appointMentorForm">
+        <div class="form-group">
+          <label for="mentorUserSelect">Select Registered Platform Member *</label>
+          <select id="mentorUserSelect" class="category-select" required style="width: 100%;">
+            <option value="">-- Choose User to Appoint as Mentor --</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="mentorTitle">Title / Role &amp; Designation *</label>
+            <input type="text" id="mentorTitle" placeholder="Title, designation or role" required />
+          </div>
+
+          <div class="form-group">
+            <label for="mentorExpertise">Expertise &amp; Domains *</label>
+            <input type="text" id="mentorExpertise" placeholder="Expertise domains (comma-separated)" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="mentorBio">Bio &amp; Mentorship Focus</label>
+          <textarea id="mentorBio" rows="3" placeholder="Description of guidance focus..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="mentorSlots">Available Guidance Time Slots (Comma-separated) *</label>
+          <input type="text" id="mentorSlots" placeholder="Time slots (comma-separated)" required />
+        </div>
+
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" data-close="appointMentorModal">Cancel</button>
+          <button type="submit" id="appointMentorSubmitBtn" class="btn btn-accent">
+            <span class="btn-text">Appoint Mentor</span>
+            <span class="btn-spinner hidden"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── 8. BOOK APPOINTMENT MODAL (STUDENT) ──────────────────────────────── -->
+  <div id="bookAppointmentModal" class="modal-overlay hidden">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div>
+          <h2>📅 Book 1-on-1 Mentorship Guidance</h2>
+          <p class="modal-subtitle" id="bookMentorSubtitle">Select an available time slot for your mentorship session.
+          </p>
+        </div>
+        <button class="modal-close" data-close="bookAppointmentModal">&times;</button>
+      </div>
+
+      <form id="bookAppointmentForm">
+        <input type="hidden" id="bookMentorId" />
+
+        <div class="mentor-booking-summary" id="bookMentorSummary">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <div class="form-group" style="margin-top: 16px;">
+          <label for="bookSlotSelect">Select Available Slot *</label>
+          <select id="bookSlotSelect" class="category-select" required style="width: 100%;">
+            <option value="">-- Choose a Time Slot --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="bookTopic">Guidance Topic / Questions *</label>
+          <textarea id="bookTopic" rows="3" placeholder="Guidance topic or questions for session..."
+            required></textarea>
+        </div>
+
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" data-close="bookAppointmentModal">Cancel</button>
+          <button type="submit" id="bookAppointmentSubmitBtn" class="btn btn-accent">
+            <span class="btn-text">Confirm Appointment</span>
+            <span class="btn-spinner hidden"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── 9. APPLY FOR MENTORSHIP MODAL (STUDENT) ────────────────────────── -->
+  <div id="applyMentorModal" class="modal-overlay hidden">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div>
+          <h2>✨ Apply to become a Campus Mentor</h2>
+          <p class="modal-subtitle">Share your expertise with fellow students by guiding them 1-on-1.</p>
+        </div>
+        <button class="modal-close" data-close="applyMentorModal">&times;</button>
+      </div>
+
+      <form id="applyMentorForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="applyMentorTitle">Title / Role &amp; Designation *</label>
+            <input type="text" id="applyMentorTitle" placeholder="e.g. Senior CS Researcher, Web Lead" required />
+          </div>
+
+          <div class="form-group">
+            <label for="applyMentorExpertise">Expertise &amp; Domains *</label>
+            <input type="text" id="applyMentorExpertise" placeholder="e.g. Web Dev, AI/ML, System Design" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="applyMentorBio">Bio &amp; Guidance Focus</label>
+          <textarea id="applyMentorBio" rows="3" placeholder="Briefly describe what topics you can help students with..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="applyMentorSlots">Available Guidance Time Slots (Comma-separated) *</label>
+          <input type="text" id="applyMentorSlots" placeholder="e.g. Mon 4:00 PM, Wed 6:00 PM, Sat 11:00 AM" required />
+        </div>
+
+        <div class="modal-actions" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+          <button type="button" id="withdrawMentorAppBtn" class="btn btn-secondary btn-sm hidden" style="color:#ef4444; border-color:#fca5a5;">
+            🚫 Withdraw Application
+          </button>
+          <div style="display:flex; gap:10px; margin-left:auto;">
+            <button type="button" class="btn btn-secondary" data-close="applyMentorModal">Cancel</button>
+            <button type="submit" id="applyMentorSubmitBtn" class="btn btn-primary">
+              <span class="btn-text">Submit Application</span>
+              <span class="btn-spinner hidden"></span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+
+
+
+  <!-- ── 13. CREATE POST MODAL ────────────────────────────────────────── -->
+  <div id="createPostModal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 540px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2>✨ Create a Post</h2>
+          <p>Share photos, videos, updates, or accomplishments with campus.</p>
+        </div>
+        <button class="modal-close" data-close="createPostModal">&times;</button>
+      </div>
+
+      <form id="createPostForm" class="modal-form">
+        <div class="form-group">
+          <textarea id="postContent" rows="4" placeholder="What's on your mind? Share photos, videos, tasks, projects, or thoughts with campus..." style="width: 100%;"></textarea>
+        </div>
+
+        <!-- Direct File Upload & Media Preview Container -->
+        <input type="file" id="postMediaFile" accept="image/*,video/*" style="display: none;" />
+
+        <div id="postMediaPreview" style="display: none; position: relative; width: 100%; max-height: 240px; border-radius: 10px; overflow: hidden; background: #f0f0f0; border: 1.5px solid var(--border);">
+          <!-- Rendered photo or video preview -->
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; flex-wrap: wrap; gap: 8px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="triggerMediaFileBtn" style="font-size: 0.82rem; gap: 6px;">
+            <span>🖼️ Attach Photo / Video</span>
+          </button>
+          <span id="postAuthorNotice" style="font-size: 0.78rem; color: var(--text-muted);">Posting as: <strong id="postAuthorName">Guest Student</strong></span>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" data-close="createPostModal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="submitPostBtn">Publish Post</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── 3D PIE CHART INSPECTOR MODAL ────────────────────────────────────── -->
+  <div id="pie3DModal" class="modal-overlay hidden">
+    <div class="modal-card modal-large pie-3d-modal-card" style="max-width: 880px; background: #ffffff;">
+      <div class="modal-header" style="border-bottom: 1px solid var(--border-light); padding-bottom: 14px;">
+        <div class="modal-title-group">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="logo-icon" style="width: 38px; height: 38px; font-size: 1.3rem; background: linear-gradient(135deg, #374151 0%, #6b7280 100%);">📊</div>
+            <div>
+              <h2 id="pie3DTitle" style="font-size: 1.3rem; font-weight: 900; margin: 0; color: var(--text-primary);">3D Chart Visualizer &amp; Inspector</h2>
+              <p id="pie3DSubtitle" style="margin: 0; font-size: 0.82rem; color: var(--text-muted);">Interactive 3D isometric view. Click slices to point arrows and inspect breakdown details.</p>
+            </div>
+          </div>
+        </div>
+        <button class="modal-close" data-close="pie3DModal">&times;</button>
+      </div>
+
+      <div class="pie-3d-container" style="display: grid; grid-template-columns: 360px 1fr; gap: 24px; padding-top: 18px; align-items: center; position: relative;">
+        
+        <!-- Left: Interactive 3D Isometric Canvas/SVG Pie Chart Stage -->
+        <div class="pie-3d-stage" style="position: relative; width: 360px; height: 340px; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%); border-radius: 16px; border: 1.5px solid var(--border); overflow: visible; box-shadow: var(--shadow-sm);">
+          
+          <!-- 3D Isometric Disc Stage Wrapper -->
+          <div id="pie3DStageDisc" class="pie-3d-disc" style="position: relative; width: 220px; height: 220px; transform-style: preserve-3d; transform: rotateX(60deg) rotateZ(-30deg); transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);">
+            <!-- Rendered 3D Pie SVG / Layers dynamically inserted by JS -->
+          </div>
+
+          <!-- Pointer Arrow Callout SVG -->
+          <svg id="pie3DArrowSvg" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index: 20; overflow: visible;">
+            <defs>
+              <marker id="arrowhead3d" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#374151" />
+              </marker>
+            </defs>
+            <path id="pie3DArrowPath" d="M 0 0 L 0 0" stroke="#374151" stroke-width="3" stroke-dasharray="6 4" fill="none" marker-end="url(#arrowhead3d)" style="transition: d 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), stroke 0.3s ease;" />
+          </svg>
+        </div>
+
+        <!-- Right: Segment Callout Details Card -->
+        <div class="pie-3d-callout-card" style="display: flex; flex-direction: column; gap: 14px; background: #f8fafc; border: 1.5px solid var(--border); border-radius: 14px; padding: 20px; box-shadow: var(--shadow-sm); position: relative;">
+          
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <span id="calloutBadge" style="background: #e2e8f0; color: #334155; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.05em;">SEGMENT DETAILS</span>
+              <h3 id="calloutSegmentTitle" style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 900; color: var(--text-primary); margin: 6px 0 2px 0;">Select a slice</h3>
+            </div>
+            <div id="calloutPctDisplay" style="font-size: 1.8rem; font-weight: 900; color: var(--orange); line-height: 1;">0%</div>
+          </div>
+
+          <div style="background: #ffffff; border: 1px solid var(--border-light); border-radius: 10px; padding: 12px; display: flex; justify-content: space-around; text-align: center;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Segment Count</span>
+              <div id="calloutCount" style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin-top: 2px;">0</div>
+            </div>
+            <div style="width: 1px; background: var(--border-light);"></div>
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Share of Total</span>
+              <div id="calloutShare" style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin-top: 2px;">0%</div>
+            </div>
+          </div>
+
+          <!-- Matching Member List -->
+          <div>
+            <h4 style="font-family: var(--font-heading); font-size: 0.85rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">👥 Matching Members in this Segment</h4>
+            <div id="calloutMemberList" style="max-height: 130px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Select a slice on the left to view member breakdown.</p>
+            </div>
+          </div>
+
+          <!-- Slice Selector Pills -->
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;" id="pie3DSlicePills">
+            <!-- Dynamic slice pills -->
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="modal-actions" style="margin-top: 18px;">
+        <button class="btn btn-secondary" data-close="pie3DModal">Close Inspector</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 💬 REAL-TIME PEER CHAT MODAL ────────────────────────────────────── -->
+  <div id="chatModal" class="modal-overlay hidden">
+    <div class="modal-card modal-large chat-modal-card" style="max-width: 680px; background: #ffffff;">
+      <div class="modal-header" style="border-bottom: 1px solid var(--border-light); padding-bottom: 14px;">
+        <div class="modal-title-group">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div id="chatFriendAvatar" class="avatar" style="width: 44px; height: 44px; font-size: 1.2rem; background: linear-gradient(135deg, #1d4aff 0%, #60a5fa 100%);">F</div>
+            <div>
+              <h2 id="chatFriendName" style="font-size: 1.25rem; font-weight: 900; margin: 0; color: var(--text-primary);">Friend Name</h2>
+              <p id="chatFriendHandle" style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">@username • Active Campus Member</p>
+            </div>
+          </div>
+        </div>
+        <button class="modal-close" data-close="chatModal">&times;</button>
+      </div>
+
+      <div class="chat-window-body" style="display: flex; flex-direction: column; height: 400px; padding-top: 14px;">
+        
+        <!-- Messages Stream -->
+        <div id="chatMessagesStream" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #f8fafc; border-radius: 14px; border: 1px solid var(--border-light);">
+          <p style="text-align: center; color: var(--text-muted); font-size: 0.82rem; margin: auto;">Loading chat messages...</p>
+        </div>
+
+        <!-- Message Input Bar -->
+        <form id="chatMessageForm" style="display: flex; gap: 10px; margin-top: 14px;">
+          <input type="text" id="chatMessageInput" placeholder="Type a message to your friend..." required style="flex: 1; padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--border);" autocomplete="off" />
+          <button type="submit" class="btn btn-primary" id="chatSendBtn">
+            <span>Send 🚀</span>
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+
+  <!-- External sidebar wiring (non-module, runs after DOM) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+      // ── Left external sidebar click routing ──────────────────────────
+      document.querySelectorAll('.sidebar-ext-item[data-action]').forEach(function (item) {
+        item.addEventListener('click', function () {
+          var action = item.dataset.action;
+
+          // Update active state on ext sidebar
+          document.querySelectorAll('.sidebar-ext .sidebar-ext-item').forEach(function (el) {
+            el.classList.remove('active');
+          });
+          item.classList.add('active');
+
+          if (action === 'tab-upcoming') {
+            var btn = document.querySelector('.tab-btn[data-tab="upcoming"]');
+            if (btn) btn.click();
+          } else if (action === 'tab-past') {
+            var btn = document.querySelector('.tab-btn[data-tab="past"]');
+            if (btn) btn.click();
+          } else if (action === 'tab-enrolled') {
+            var btn = document.querySelector('.tab-btn[data-tab="enrolled"]');
+            if (btn) btn.click();
+          } else if (action === 'open-auth') {
+            // If already logged in, open profile; otherwise open auth
+            var userControls = document.getElementById('userControls');
+            if (userControls && !userControls.classList.contains('hidden')) {
+              document.getElementById('openProfileBtn').click();
+            } else {
+              document.getElementById('openAuthBtn').click();
+            }
+          }
+        });
+      });
+
+    });
+  </script>
+
+
+  <!-- 🔔 14. NOTIFICATION CENTER MODAL -->
+  <div id="notifModal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width:480px; width:100%; border-radius:16px;">
+      <div class="modal-header" style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border-light); padding-bottom:12px; margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.3rem;">🔔</span>
+          <h3 style="font-size:1.1rem; font-weight:800; color:var(--text-dark); margin:0;">Notification Center</h3>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="btn btn-xs btn-ghost" id="markAllNotifsReadBtn" style="font-size:0.75rem; color:var(--text-muted);">Mark all read</button>
+          <button class="modal-close" data-close="notifModal">&times;</button>
+        </div>
+      </div>
+
+      <div id="notifFeedStream" style="display:flex; flex-direction:column; gap:8px; max-height:420px; overflow-y:auto; padding-right:4px;">
+        <!-- Dynamic notification cards rendered here -->
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="main.js"></script>
+</body>
+
+</html>
