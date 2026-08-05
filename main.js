@@ -114,6 +114,13 @@ function isCurrentUserAdmin() {
   return currentProfile?.role === 'admin' || email === 'nikhildeosani@gmail.com';
 }
 
+/** Returns true only if the currently logged-in user is the original primary admin */
+function isCurrentUserPrimaryAdmin() {
+  if (!currentSession || !currentSession.user) return false;
+  const email = (currentSession.user.email || currentProfile?.email || '').trim().toLowerCase();
+  return email === 'nikhildeosani@gmail.com';
+}
+
 // ─── Auth UI ───────────────────────────────────────────────────────────────
 function updateAuthUI() {
   const isLoggedIn = !!currentSession;
@@ -289,10 +296,13 @@ function setupStaticListeners() {
   // Admin Ticket Verification Search Form
   document.getElementById('adminTicketSearchForm')?.addEventListener('submit', handleVerifyTicketSearch);
 
-  // Admin User Search & Filter
+  // Admin User Search & Filter & Appoint Admin Modal
   document.getElementById('adminUserSearchInput')?.addEventListener('input', renderAdminUsers);
   document.getElementById('adminUserStatusFilter')?.addEventListener('change', renderAdminUsers);
   document.getElementById('refreshAdminUsersBtn')?.addEventListener('click', loadAdminUsers);
+  document.getElementById('openAppointAdminBtn')?.addEventListener('click', () => window.openAppointAdminModal());
+  document.getElementById('appointAdminForm')?.addEventListener('submit', handleAppointAdminSubmit);
+  document.getElementById('adminUserSelect')?.addEventListener('change', handleAdminUserSelectChange);
 
   // Career Sub-Tab Switcher
   initCareerSubTabs();
@@ -2134,33 +2144,68 @@ function renderAdminUsers() {
     const status = user.status || 'active';
     const statusClass = status === 'banned' ? 'banned' : status === 'blocked' ? 'blocked' : 'active';
     const isSelf = currentSession?.user?.id === user.id;
+    const userEmailLower = (user.email || '').trim().toLowerCase();
+    const isOriginalAdmin = userEmailLower === 'nikhildeosani@gmail.com';
+    const isAdminRole = user.role === 'admin';
+    const userNameEscaped = (user.name || user.email || '').replace(/'/g, "\\'");
+
+    let roleBadgeHtml = '';
+    if (isOriginalAdmin) {
+      roleBadgeHtml = `
+        <span style="font-weight: 800; font-size: 0.78rem; color: #f59e0b; background: rgba(245, 158, 11, 0.12); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3); display: inline-flex; align-items: center; gap: 4px;">
+          ⭐ Primary Admin
+        </span>`;
+    } else if (isAdminRole) {
+      roleBadgeHtml = `
+        <span style="font-weight: 700; font-size: 0.78rem; color: var(--gold); background: rgba(212, 175, 55, 0.12); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.25); display: inline-flex; align-items: center; gap: 4px;">
+          👑 Admin
+        </span>`;
+    } else {
+      roleBadgeHtml = `
+        <span style="font-weight: 600; font-size: 0.8rem; color: var(--text-muted);">
+          Student
+        </span>`;
+    }
 
     let actionsHtml = '';
-    if (isSelf) {
-      actionsHtml = '<span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">(You)</span>';
+    if (isOriginalAdmin) {
+      // Primary admin row: protected from demotion, ban, or deletion
+      actionsHtml = `<span class="badge" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b; font-weight: 700; font-size: 0.75rem; padding: 5px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">⭐ Primary Admin (Protected)</span>`;
     } else {
-      actionsHtml = '<div class="user-action-group">';
-      actionsHtml += `<button class="btn btn-xs btn-accent" onclick="window.openAppointMentorModal('${user.id}')">🎓 Appoint Mentor</button>`;
-      if (status === 'active') {
-        actionsHtml += `<button class="btn btn-xs btn-warning" onclick="window.handleSetUserStatus('${user.id}', 'blocked')">⚡ Block</button>`;
-        actionsHtml += `<button class="btn btn-xs btn-danger" onclick="window.handleSetUserStatus('${user.id}', 'banned')">🚫 Ban</button>`;
+      actionsHtml = '<div class="user-action-group" style="display: inline-flex; gap: 6px; flex-wrap: nowrap; align-items: center; white-space: nowrap;">';
+
+      // ── Admin Role Toggle (Make Admin / Remove Admin) ─────────────────────
+      if (isAdminRole) {
+        actionsHtml += `<button class="btn btn-xs" onclick="window.handleSetUserRole('${user.id}', 'student', '${userNameEscaped}')" style="background: rgba(239, 68, 68, 0.18); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; font-weight: 700; border-radius: 8px; padding: 5px 10px; cursor: pointer;" title="Revoke Admin Rights">🛡️ Remove Admin</button>`;
       } else {
-        actionsHtml += `<button class="btn btn-xs btn-success" onclick="window.handleSetUserStatus('${user.id}', 'active')">✅ Activate</button>`;
+        actionsHtml += `<button class="btn btn-xs" onclick="window.handleSetUserRole('${user.id}', 'admin', '${userNameEscaped}')" style="background: linear-gradient(135deg, #6366f1, #4f46e5); border: none; color: #ffffff; font-weight: 700; border-radius: 8px; padding: 5px 12px; box-shadow: 0 2px 10px rgba(99, 102, 241, 0.45); cursor: pointer;" title="Grant Admin Rights">👑 Make Admin</button>`;
       }
-      actionsHtml += `<button class="btn btn-xs btn-secondary" onclick="window.handleDeleteUser('${user.id}', '${(user.name || user.email || '').replace(/'/g, "\\'")}')" style="color: #c62828;">🗑️ Delete</button>`;
+
+      // Appoint Mentor
+      actionsHtml += `<button class="btn btn-xs btn-accent" onclick="window.openAppointMentorModal('${user.id}')" title="Appoint User as Mentor" style="cursor: pointer;">🎓 Mentor</button>`;
+
+      // Ban or Activate & Delete (Block button REMOVED)
+      if (!isSelf) {
+        if (status === 'banned') {
+          actionsHtml += `<button class="btn btn-xs btn-success" onclick="window.handleSetUserStatus('${user.id}', 'active')" title="Restore user to active status" style="cursor: pointer;">✅ Activate</button>`;
+        } else {
+          actionsHtml += `<button class="btn btn-xs btn-danger" onclick="window.handleSetUserStatus('${user.id}', 'banned')" title="Ban user from platform" style="cursor: pointer;">🚫 Ban</button>`;
+        }
+        actionsHtml += `<button class="btn btn-xs btn-secondary" onclick="window.handleDeleteUser('${user.id}', '${userNameEscaped}')" style="color: #c62828; cursor: pointer;" title="Delete user profile">🗑️ Delete</button>`;
+      } else {
+        actionsHtml += `<span style="font-size: 0.72rem; color: var(--text-muted); font-style: italic;">(You)</span>`;
+      }
       actionsHtml += '</div>';
     }
 
     return `
       <tr>
         <td>
-          <div style="font-weight: 700; color: var(--text-dark);">${user.name || 'Unnamed User'}</div>
+          <div style="font-weight: 700; color: var(--text-dark);">${user.name || 'Unnamed User'} ${isSelf ? '<span style="font-size:0.75rem; color:var(--gold); font-weight:600;">(You)</span>' : ''}</div>
           <div style="font-size: 0.75rem; color: var(--text-muted);">${user.email || user.id}</div>
         </td>
         <td>
-          <span style="font-weight: 700; font-size: 0.8rem; color: ${user.role === 'admin' ? 'var(--gold)' : 'var(--text-muted)'};">
-            ${user.role === 'admin' ? 'Admin' : 'Student'}
-          </span>
+          ${roleBadgeHtml}
         </td>
         <td>
           <div style="font-size: 0.85rem;">${user.roll || '—'}</div>
@@ -2178,6 +2223,170 @@ function renderAdminUsers() {
 }
 
 // Global action handlers for user management table buttons
+window.handleSetUserRole = async function (userId, newRole, userName) {
+  if (!isCurrentUserAdmin()) {
+    showToast('⛔ Admin privileges required to manage roles.', 'warning');
+    return;
+  }
+
+  const isGranting = newRole === 'admin';
+  const confirmMsg = isGranting
+    ? `Are you sure you want to make "${userName}" an Admin?\n\nThey will gain full access to the Admin Panel, user management, event publishing, mentorship management, and system activity logs.`
+    : `Are you sure you want to remove Admin privileges from "${userName}"?`;
+
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    showToast(isGranting ? `Granting Admin access to ${userName}...` : `Revoking Admin access from ${userName}...`, 'info');
+    await store.setUserRole(userId, newRole);
+
+    // If updating the currently logged-in user's own role, reflect it in local state
+    if (currentSession?.user?.id === userId && currentProfile) {
+      currentProfile.role = newRole;
+      updateAuthUI();
+    }
+
+    showToast(isGranting ? `👑 ${userName} is now an Admin!` : `Removed Admin rights from ${userName}.`, 'success');
+    await loadAdminUsers();
+    await loadAdminLogs();
+  } catch (err) {
+    console.error('Failed to update user role:', err);
+    showToast(err.message || 'Failed to update user role.', 'warning');
+  }
+};
+
+// ── Appoint Admin Modal Handlers ──────────────────────────────────────────────
+window.openAppointAdminModal = async function (preselectedUserId = null) {
+  if (!isCurrentUserAdmin()) {
+    showToast('Access denied: Admin privileges required.', 'warning');
+    return;
+  }
+
+  const selectEl = document.getElementById('adminUserSelect');
+  if (selectEl) {
+    selectEl.innerHTML = '<option value="">Loading registered members...</option>';
+  }
+
+  openModal('appointAdminModal');
+
+  try {
+    const users = await store.getAllUsers();
+    if (!users || users.length === 0) {
+      if (selectEl) selectEl.innerHTML = '<option value="">No registered members found</option>';
+      return;
+    }
+
+    window._allUsersForAdminAppoint = users;
+
+    if (selectEl) {
+      selectEl.innerHTML = '<option value="">-- Choose User to Manage Admin Rights --</option>' +
+        users.map(u => {
+          const roleBadge = u.role === 'admin' ? '👑 Admin' : 'Student';
+          const isOriginal = (u.email || '').toLowerCase() === 'nikhildeosani@gmail.com' ? '⭐ Primary Admin' : roleBadge;
+          const label = `${u.name || 'Unnamed'} (${u.email || u.roll || u.id}) — [Current: ${isOriginal}]`;
+          const isSelected = preselectedUserId === u.id ? 'selected' : '';
+          return `<option value="${u.id}" ${isSelected}>${label}</option>`;
+        }).join('');
+    }
+
+    if (preselectedUserId) {
+      if (selectEl) selectEl.value = preselectedUserId;
+      handleAdminUserSelectChange();
+    } else {
+      const previewEl = document.getElementById('adminUserSelectedPreview');
+      if (previewEl) previewEl.style.display = 'none';
+    }
+
+  } catch (err) {
+    console.error('Failed to load users for appoint admin modal:', err);
+    showToast('Failed to load user list.', 'warning');
+  }
+};
+
+function handleAdminUserSelectChange() {
+  const selectEl = document.getElementById('adminUserSelect');
+  const previewEl = document.getElementById('adminUserSelectedPreview');
+  if (!selectEl || !previewEl) return;
+
+  const userId = selectEl.value;
+  const users = window._allUsersForAdminAppoint || [];
+  const user = users.find(u => u.id === userId);
+
+  if (!user) {
+    previewEl.style.display = 'none';
+    return;
+  }
+
+  document.getElementById('previewUserName').textContent = user.name || 'Unnamed User';
+  document.getElementById('previewUserEmail').textContent = user.email || user.id;
+  document.getElementById('previewUserDept').textContent = `${user.dept || 'General'} (${user.roll || 'No Roll'})`;
+
+  const isOriginal = (user.email || '').toLowerCase() === 'nikhildeosani@gmail.com';
+  const roleEl = document.getElementById('previewUserRole');
+  if (isOriginal) {
+    roleEl.textContent = '⭐ Primary Admin (Protected)';
+    roleEl.style.background = 'rgba(245, 158, 11, 0.2)';
+    roleEl.style.color = '#f59e0b';
+  } else if (user.role === 'admin') {
+    roleEl.textContent = '👑 Admin';
+    roleEl.style.background = 'rgba(212, 175, 55, 0.2)';
+    roleEl.style.color = 'var(--gold)';
+  } else {
+    roleEl.textContent = 'Student';
+    roleEl.style.background = 'rgba(255, 255, 255, 0.1)';
+    roleEl.style.color = 'var(--text-muted)';
+  }
+
+  previewEl.style.display = 'block';
+
+  // Auto-set choice based on current role
+  const choiceEl = document.getElementById('adminRoleChoice');
+  if (choiceEl) {
+    choiceEl.value = user.role === 'admin' ? 'student' : 'admin';
+  }
+}
+
+async function handleAppointAdminSubmit(e) {
+  e.preventDefault();
+  const selectEl = document.getElementById('adminUserSelect');
+  const choiceEl = document.getElementById('adminRoleChoice');
+  const submitBtn = document.getElementById('appointAdminSubmitBtn');
+  if (!selectEl || !choiceEl) return;
+
+  const userId = selectEl.value;
+  const newRole = choiceEl.value;
+  if (!userId) {
+    showToast('Please select a registered member first.', 'warning');
+    return;
+  }
+
+  const users = window._allUsersForAdminAppoint || [];
+  const targetUser = users.find(u => u.id === userId);
+  const userName = targetUser?.name || targetUser?.email || 'User';
+
+  setButtonLoading(submitBtn, true);
+  try {
+    await store.setUserRole(userId, newRole);
+    closeModal('appointAdminModal');
+
+    const isGranting = newRole === 'admin';
+    showToast(isGranting ? `👑 ${userName} is now an Admin!` : `Removed Admin rights from ${userName}.`, 'success');
+
+    await loadAdminUsers();
+    await loadAdminLogs();
+
+    if (currentSession?.user?.id === userId && currentProfile) {
+      currentProfile.role = newRole;
+      updateAuthUI();
+    }
+  } catch (err) {
+    console.error('Appoint admin submit error:', err);
+    showToast(err.message || 'Failed to update user role.', 'warning');
+  } finally {
+    setButtonLoading(submitBtn, false);
+  }
+}
+
 window.handleSetUserStatus = async function (userId, newStatus) {
   try {
     showToast(`Updating user status to ${newStatus.toUpperCase()}...`, 'info');
@@ -4284,6 +4493,8 @@ window.markAllNotificationsRead = async function() {
   await store.markNotificationsAsRead(currentSession.user.id, allIds);
   showToast('All notifications marked as read.', 'info');
 };
+
+
 
 
 
