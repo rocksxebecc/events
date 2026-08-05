@@ -546,8 +546,80 @@ export async function getAllUsers() {
   return data || [];
 }
 
+/** Admin Action — Change user role ('admin' or 'student') with original admin protection */
+export async function setUserRole(userId, newRole) {
+  // 1. Fetch target user profile to check protection
+  const { data: targetUser } = await supabase
+    .from('profiles')
+    .select('email, name, role')
+    .eq('id', userId)
+    .maybeSingle();
+
+  const targetEmail = (targetUser?.email || '').trim().toLowerCase();
+  if (targetEmail === 'nikhildeosani@gmail.com' && newRole !== 'admin') {
+    throw new Error('The original admin (nikhildeosani@gmail.com) is protected and cannot be removed as admin!');
+  }
+
+  // 2. Perform DB update
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ role: newRole })
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // 3. Log Activity & Send Notification
+  const targetName = data?.name || targetUser?.name || data?.email || targetEmail || userId;
+  const isGranting = newRole === 'admin';
+
+  await logActivity(
+    isGranting ? 'USER_PROMOTED_ADMIN' : 'USER_DEMOTED_ADMIN',
+    isGranting ? `Granted Admin privileges to user ${targetName} (${data?.email || targetEmail})` : `Revoked Admin privileges from user ${targetName} (${data?.email || targetEmail})`,
+    userId,
+    data?.email || targetEmail || session?.user?.email
+  );
+
+  try {
+    if (isGranting) {
+      await createNotification({
+        userId: userId,
+        title: '👑 Admin Access Granted',
+        message: 'You have been granted Admin privileges! You now have full access to the Admin Panel.',
+        type: 'system',
+        linkTab: 'admin'
+      });
+    } else {
+      await createNotification({
+        userId: userId,
+        title: 'ℹ️ Role Updated',
+        message: 'Your Admin privileges have been revoked by the primary administrator.',
+        type: 'info',
+        linkTab: 'profile'
+      });
+    }
+  } catch (notifErr) {
+    console.warn('Failed to dispatch role notification:', notifErr);
+  }
+
+  return data;
+}
+
 /** Admin Action — Set user status to 'active', 'banned', or 'blocked' */
 export async function setUserStatus(userId, status) {
+  // Check target user to protect primary admin
+  const { data: targetUser } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('id', userId)
+    .maybeSingle();
+
+  const targetEmail = (targetUser?.email || '').trim().toLowerCase();
+  if (targetEmail === 'nikhildeosani@gmail.com' && (status === 'banned' || status === 'blocked')) {
+    throw new Error('The original admin (nikhildeosani@gmail.com) is protected and cannot be banned or blocked.');
+  }
+
   const { data, error } = await supabase
     .from('profiles')
     .update({ status })
@@ -568,6 +640,18 @@ export async function setUserStatus(userId, status) {
 
 /** Admin Action — Delete user profile and clear associated data */
 export async function deleteUserProfile(userId) {
+  // Check target user to protect primary admin
+  const { data: targetUser } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('id', userId)
+    .maybeSingle();
+
+  const targetEmail = (targetUser?.email || '').trim().toLowerCase();
+  if (targetEmail === 'nikhildeosani@gmail.com') {
+    throw new Error('The original admin (nikhildeosani@gmail.com) is protected and cannot be deleted.');
+  }
+
   // First clear enrollments
   await supabase.from('enrollments').delete().eq('user_id', userId);
   
